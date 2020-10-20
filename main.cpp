@@ -71,6 +71,8 @@ const Vector3 SPHERE_CENTER = Vector3(0, 0, 0);
 const Vector3 LIGHTING_POS = Vector3(-200, -200, 200);
 const Vector3 EYE_POS = Vector3(0, 0, 400);
 const int SPECULAR_COEFFICIENT_POWER = 30;
+const Color SPHERE_COLOR = Color(0, 0, 255);
+const Color LIGHTING_COLOR = Color(255, 255, 255); 
 
 /* ---------------------- MISCELLANEOUS FUNCS ------------------------*/
 
@@ -127,8 +129,8 @@ int main() {
     image_texture.create(800, 800);
 
     window.clear(sf::Color::Black);
-    draw_sphere(image, SPHERE_RADIUS, SPHERE_CENTER, LIGHTING_POS, EYE_POS,
-                    sf::Color::Blue, sf::Color::White);
+    draw_sphere(image, SPHERE_RADIUS, SPHERE_CENTER, LIGHTING_POS, EYE_POS, SPHERE_COLOR, LIGHTING_COLOR);
+
     while (window.isOpen()) {
         image_texture.loadFromImage(image);
         image_sprite.setTexture(image_texture);
