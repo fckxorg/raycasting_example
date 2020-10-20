@@ -1,3 +1,4 @@
+#include <bits/stdint-uintn.h>
 #include <math.h>
 #include <unistd.h>
 
@@ -8,7 +9,8 @@
 #include <SFML/System/Vector2.hpp>
 #include <SFML/Window/VideoMode.hpp>
 
-// representation of 3-dimensional vector
+/* -------------- VECTOR CLASS REPRESENTATION -----------------------*/
+
 class Vector3 {
    public:
     int x;
@@ -33,42 +35,65 @@ Vector3 operator+(const Vector3& first, const Vector3& second) {
     return Vector3(first.x + second.x, first.y + second.y, first.z + second.z);
 }
 
-// constants for scene
-const float     AMBIENT_INTESITY    = 0.15;
-const int       SPHERE_RADIUS       = 150;
-const Vector3   SPHERE_CENTER       = Vector3(0, 0, 0);
-const Vector3   LIGHTING_POS        = Vector3(-200, -200, 200);
-const Vector3   EYE_POS             = Vector3(0, 0, 400);
+/* -------------- COLOR CLASS REPRESENTATION ------------------------*/
 
-sf::Color get_color(sf::Color sphere_color, sf::Color lighting_color,
-                    const float diffuse_intensity,
-                    const float specular_intensity,
-                    const float ambient_intensity) {
-    sphere_color.r =
-        std::min(255.f, (sphere_color.r + lighting_color.r) *
-                                (diffuse_intensity * 0.6f + ambient_intensity) +
-                            lighting_color.r * specular_intensity * 0.25f);
-    sphere_color.g =
-        std::min(255.f, (sphere_color.g + lighting_color.g) *
-                                (diffuse_intensity * 0.6f + ambient_intensity) +
-                            lighting_color.g * specular_intensity * 0.25f);
-    sphere_color.b =
-        std::min(255.f, (sphere_color.b + lighting_color.b) *
-                                (diffuse_intensity * 0.6f + ambient_intensity) +
-                            lighting_color.b * specular_intensity * 0.25f);
+class Color {
+    uint8_t r;
+    uint8_t g;
+    uint8_t b;
+
+   public:
+    Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
+
+    void operator<<(const float intensity) {
+        r = std::min(255.f, r * intensity);
+        g = std::min(255.f, g * intensity);
+        b = std::min(255.f, b * intensity);
+    }
+
+    Color(sf::Color color) : r(color.r), g(color.g), b(color.b) {}
+
+    operator sf::Color() { return sf::Color(r, g, b); }
+
+    Color& operator+=(const Color& other) {
+        r = std::min(r + other.r, 255);
+        g = std::min(g + other.g, 255);
+        b = std::min(b + other.b, 255);
+        return *this;
+    }
+};
+
+/* ----------------------- SCENE CONSTANTS ---------------------------*/
+
+const float AMBIENT_INTESITY = 0.15;
+const int SPHERE_RADIUS = 150;
+const Vector3 SPHERE_CENTER = Vector3(0, 0, 0);
+const Vector3 LIGHTING_POS = Vector3(-200, -200, 200);
+const Vector3 EYE_POS = Vector3(0, 0, 400);
+const int SPECULAR_COEFFICIENT_POWER = 30;
+
+/* ---------------------- MISCELLANEOUS FUNCS ------------------------*/
+
+Color get_color(Color sphere_color, Color lighting_color,
+                const float diffuse_intensity, const float specular_intensity,
+                const float ambient_intensity) {
+    sphere_color << diffuse_intensity * 0.6f + ambient_intensity;
+    lighting_color << diffuse_intensity * 0.6f + ambient_intensity +
+                          specular_intensity * 0.25f;
+    sphere_color += lighting_color;
 
     return sphere_color;
 }
 
-void place_pixel(sf::Image& img, sf::Color color, Vector3 pos) {
+void place_pixel(sf::Image& img, Color color, Vector3 pos) {
     pos.x += img.getSize().x / 2;
     pos.y += img.getSize().y / 2;
     img.setPixel(pos.x, pos.y, color);
 }
 
 void draw_sphere(sf::Image& image, int radius, Vector3 pos,
-                 Vector3 lighting_pos, Vector3 eye_pos, sf::Color sphere_color,
-                 sf::Color lighting_color) {
+                 Vector3 lighting_pos, Vector3 eye_pos, Color sphere_color,
+                 Color lighting_color) {
     for (int i = pos.x - radius; i < pos.x + radius; ++i) {
         for (int j = pos.y - radius; j < pos.y + radius; ++j) {
             if (i * i + j * j <= radius * radius) {
@@ -79,8 +104,9 @@ void draw_sphere(sf::Image& image, int radius, Vector3 pos,
                 float diffuse_intensity =
                     std::max(0.f, sphere_point | lighting_pos);
                 float specular_intensity = std::pow(
-                    std::max(0.f, (eye_pos + lighting_pos) | sphere_point), 30);
-                sf::Color color =
+                    std::max(0.f, (eye_pos + lighting_pos) | sphere_point),
+                    SPECULAR_COEFFICIENT_POWER);
+                Color color =
                     get_color(sphere_color, lighting_color, diffuse_intensity,
                               specular_intensity, AMBIENT_INTESITY);
 
@@ -89,6 +115,8 @@ void draw_sphere(sf::Image& image, int radius, Vector3 pos,
         }
     }
 }
+
+/*----------------------- TEST DRIVER MAIN ------------------------*/
 
 int main() {
     sf::RenderWindow window(sf::VideoMode(800, 800), "Raycast sphere");
@@ -99,9 +127,9 @@ int main() {
     image_texture.create(800, 800);
 
     window.clear(sf::Color::Black);
-    int i = 0;
+    draw_sphere(image, SPHERE_RADIUS, SPHERE_CENTER, LIGHTING_POS, EYE_POS,
+                    sf::Color::Blue, sf::Color::White);
     while (window.isOpen()) {
-        draw_sphere(image, SPHERE_RADIUS, SPHERE_CENTER, LIGHTING_POS, EYE_POS, sf::Color::Red, sf::Color::White);
         image_texture.loadFromImage(image);
         image_sprite.setTexture(image_texture);
         window.draw(image_sprite);
@@ -112,8 +140,6 @@ int main() {
         }
 
         window.display();
-        sleep(1);
-        i += 50;
     }
     return 0;
 }
