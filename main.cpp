@@ -64,8 +64,16 @@ class Color {
     }
 };
 
+
 /* ----------------------- SCENE CONSTANTS ---------------------------*/
 
+struct Material {
+    const float ambient_sensetivity; 
+    const float diffuse_sensetivity;
+    const float specular_sensetivity;   
+};
+
+/* ----------------------- SCENE CONSTANTS ---------------------------*/
 const float         AMBIENT_INTESITY            = 0.15;
 const int           SPHERE_RADIUS               = 150;
 const Vector3       SPHERE_CENTER               = Vector3(0, 0, 0);
@@ -74,12 +82,13 @@ const Vector3       EYE_POS                     = Vector3(0, 0, 400);
 const int           SPECULAR_COEFFICIENT_POWER  = 30;
 const Color         SPHERE_COLOR                = Color(0, 0, 255);
 const Color         LIGHTING_COLOR              = Color(255, 255, 255); 
+const Material      SPHERE_MATERIAL             = {0.8, 0.6, 0.25};
 
 /* ---------------------- MISCELLANEOUS FUNCS ------------------------*/
 
 Color get_color(Color sphere_color, Color lighting_color, const float diffuse_intensity, const float specular_intensity, const float ambient_intensity) {
-    sphere_color << diffuse_intensity * 0.6f + ambient_intensity;
-    lighting_color << diffuse_intensity * 0.6f + ambient_intensity + specular_intensity * 0.25f;
+    sphere_color << diffuse_intensity * SPHERE_MATERIAL.diffuse_sensetivity + ambient_intensity * SPHERE_MATERIAL.ambient_sensetivity;
+    lighting_color << diffuse_intensity * SPHERE_MATERIAL.diffuse_sensetivity + ambient_intensity * SPHERE_MATERIAL.ambient_sensetivity + specular_intensity * SPHERE_MATERIAL.specular_sensetivity;
     sphere_color += lighting_color;
 
     return sphere_color;
